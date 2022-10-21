@@ -3,10 +3,17 @@
 {% load humanize %}
 {% block details %}
 <script>
-function showForm(action) {
+function showForm(action, instance='') {
 	iframe = document.getElementById("jobsFormIframe");
-	iframe.src = "jobs/forms/" + action
-	iframe.style.display = "initial"
+	iframe.src = "jobs/forms/" + action + "?instance=" + instance;
+	div = document.getElementById("jobsFormDiv");
+	div.style.display = "initial"
+}
+
+function hideForm() {
+	div = document.getElementById("jobsFormDiv");
+	div.style.display = "none";
+	location.reload(); 
 }
 </script>
 
@@ -16,46 +23,55 @@ function showForm(action) {
         </div>
         <div class="panel-body" style="min-height: 100px;">
             {{ text }}
+			{% if 'create' in formActions %}
+				</br>
+				<button onclick="showForm('create')">New Job</button>
+			{% endif %}
 			<table class="steelBlueCols" style="min-height: 100px;">
 				<tr>
 					<td>Actions</td>
+					<td>Job</td>
 					<td>Creator</td>
-					<td>Assigner</td>
 					<td>Assigned To</td>
+					<td>Assigned By</td>
 					<td>Parent</td>
 					<td>Root</td>
-					<td>Product</td>
 				</tr>
-			{% for job_entry in job_display_list %}
+			{% for job in jobs %}
 				<tr>
 					<td>
-						{% for formAction in formActions %}
-							{% if formAction == "assign" %}
-								{% if job_entry.assignee == Null %}
-									<button class="action" onclick="showForm('{{formAction}}')">{{formAction|make_list|first}}</button>
-								{% endif %}
-							{% elif formAction == "create" %}
-								{{pass}}
-							{% else %}
-								<button class="action" onclick="showForm('{{formAction}}')">{{formAction|make_list|first}}</button>
-							{% endif %}
-						{% endfor %}
+						{% if 'update' in formActions %}
+							<button class="action" onclick="showForm('update', '{{job.id}}')">U</button>
+						{% endif %}
+						{% if 'delete' in formActions %}
+							<button class="action" onclick="showForm('delete', '{{job.id}}')">D</button>
+						{% endif %}
 					</td>
-					<td>{{job_entry.creator}}</td>
-					<td>{{job_entry.assigner}}</td>
-					<td>{{job_entry.assignee|default:"Unassigned"}} </td>
-					<td>{{job_entry.parent}}</td>
-					<td>{{job_entry.root}}</td>
-					<td>{{job_entry.product}}</td>
+					<td>{{job.self}}</td>
+					<td>{{job.creator}}</td>
+					<td>{% if 'assign' in formActions and job.assignee == None %}
+							<button class="action" onclick="showForm('assign', '{{job.id}}')">Assign</button>
+						{% else %}
+							{{job.assignee}}
+							{% if 'unassign' in formActions %}
+								<button class="action" onclick="showForm('unassign', '{{job.id}}')">Unassign</button>
+							{% endif %}
+						{% endif %}
+					</td>
+					<td>{{job.assigner}}</td>
+					<td>{{job.parent}}</td>
+					<td>{{job.root}}</td>
 				</tr>
 			{% endfor %}
 			</table>
         </div>
     </div>
 	
-	<iframe id="jobsFormIframe" class="formIframe">
-	</iframe>
-	
+	<div id="jobsFormDiv" class="formDiv">
+		<button class="topright" onclick="hideForm()">X</button>
+		<iframe id="jobsFormIframe" class="formIFrame">
+		</iframe>
+	</div>
 	
 {% endblock %}
 {% block extra_javascript %}
@@ -63,21 +79,29 @@ function showForm(action) {
 
 {% block extra_css %}
 <style>
-iframe.formIframe
+.topright {
+	position: relative;
+	float: right;
+}
+div.formDiv
 {
 	display: none;
 	position: fixed;
 	top: 30%;
 	left: 10%;
 	width: 80%;
+}
+iframe.formIFrame
+{
+	width: 100%;
 	background-color: white;
 }
-action.btn {
+button.action {
   -webkit-border-radius: 4;
   -moz-border-radius: 4;
   border-radius: 4px;
-  color: #000000;
-  font-size: 20px;
+  color: #000000 !important;
+  font-size: 10px;
   background: #3989a4;
   text-decoration: none;
 }
